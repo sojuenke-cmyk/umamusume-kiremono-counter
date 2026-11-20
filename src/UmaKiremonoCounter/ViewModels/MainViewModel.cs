@@ -32,11 +32,11 @@ public sealed class MainViewModel : ObservableObject
         _data = store.Load();
         RestoreWindowPosition(screen.VirtualScreen);
 
-        Signature = new CategoryViewModel("勝負服 / 固有 切れ者イベント", true, s => Record(EventKind.SignatureEvent, s), CanRecord);
-        Common = new CategoryViewModel("共通 切れ者イベント", true, s => Record(EventKind.CommonEvent, s), CanRecord);
-        Race = new CategoryViewModel("レース後 切れ者イベント", true, s => Record(EventKind.RaceEvent, s), CanRecord);
-        Romance = new CategoryViewModel("恋愛相談", true, s => Record(EventKind.RomanceConsultation, s), CanRecord);
-        Awakening = new CategoryViewModel("覚醒Lv7 切れ者イベント", false, s => Record(EventKind.AwakeningLv7, s), CanRecord);
+        Signature = new CategoryViewModel("勝負服 / 固有 切れ者イベント", "勝負服/固有", true, true, s => Record(EventKind.SignatureEvent, s), CanRecord);
+        Common = new CategoryViewModel("共通 切れ者イベント", "共通", true, true, s => Record(EventKind.CommonEvent, s), CanRecord);
+        Race = new CategoryViewModel("レース後 切れ者イベント", "レース後", true, true, s => Record(EventKind.RaceEvent, s), CanRecord);
+        Romance = new CategoryViewModel("恋愛相談", "恋愛相談", true, false, s => Record(EventKind.RomanceConsultation, s), CanRecord);
+        Awakening = new CategoryViewModel("覚醒Lv7 切れ者イベント", "覚醒Lv7", false, false, s => Record(EventKind.AwakeningLv7, s), CanRecord);
 
         StartCareerCommand = new RelayCommand(StartCareer);
         UndoCommand = new RelayCommand(Undo, () => _data.Records.Count > 0);
@@ -186,16 +186,24 @@ public sealed class MainViewModel : ObservableObject
         var records = _data.Records;
         CurrentCareer = records.Count(r => r.Kind == EventKind.CareerStart);
 
-        Stats.Clear();
-        Stats.Add(ToRow("勝負服/固有", Statistics.Compute(records, EventKind.SignatureEvent)));
-        Stats.Add(ToRow("共通", Statistics.Compute(records, EventKind.CommonEvent)));
-        Stats.Add(ToRow("レース後", Statistics.Compute(records, EventKind.RaceEvent)));
-        Stats.Add(ToRow("合計", Statistics.Compute(records, StreakKinds), isTotal: true));
-
+        var signature = Statistics.Compute(records, EventKind.SignatureEvent);
+        var common = Statistics.Compute(records, EventKind.CommonEvent);
+        var race = Statistics.Compute(records, EventKind.RaceEvent);
         var romance = Statistics.Compute(records, EventKind.RomanceConsultation);
-        Stats.Add(ToRow("恋愛相談", romance) with { MissStreak = "-" });
-
         var awakening = Statistics.Compute(records, EventKind.AwakeningLv7);
+
+        Signature.Update(signature);
+        Common.Update(common);
+        Race.Update(race);
+        Romance.Update(romance);
+        Awakening.Update(awakening);
+
+        Stats.Clear();
+        Stats.Add(ToRow("勝負服/固有", signature));
+        Stats.Add(ToRow("共通", common));
+        Stats.Add(ToRow("レース後", race));
+        Stats.Add(ToRow("合計", Statistics.Compute(records, StreakKinds), isTotal: true));
+        Stats.Add(ToRow("恋愛相談", romance) with { MissStreak = "-" });
         Stats.Add(new StatsRow("覚醒Lv7", $"{awakening.Occurrences}", "-", "-", "-"));
 
         Log.Clear();

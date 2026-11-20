@@ -128,11 +128,15 @@
         <DataTemplate x:Key="CompactCategoryTemplate" DataType="{x:Type vm:CategoryViewModel}">
             <Grid Margin="0,1">
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="76" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBlock Text="{Binding Title}" VerticalAlignment="Center" Margin="2,0,0,0" />
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <TextBlock Text="{Binding ShortTitle}" VerticalAlignment="Center" Margin="2,0,0,0" />
+                <TextBlock Grid.Column="1" Text="{Binding Summary}" VerticalAlignment="Center" Foreground="#555B68"
+                           TextTrimming="CharacterEllipsis"
+                           ToolTip="累計。未取得連続: 前回の成功から連続で切れ者を引けていない回数" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal">
                     <Button Content="成功" Style="{StaticResource CompactSuccessButton}" Command="{Binding SuccessCommand}"
                             Visibility="{Binding HasOutcome, Converter={StaticResource BoolToVis}}" />
                     <Button Content="失敗" Style="{StaticResource CompactButton}" Command="{Binding FailureCommand}"
