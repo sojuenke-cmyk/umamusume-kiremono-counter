@@ -50,6 +50,19 @@ dotnet run --project src/UmaKiremonoCounter
 
 [Releases](https://github.com/sojuenke-cmyk/umamusume-kiremono-counter/releases) から `UmaKiremonoCounter-vX.Y.Z-win-x64.zip` をダウンロードし、展開した `UmaKiremonoCounter.exe` を実行します（.NET のインストールは不要）。
 
+### アンチウイルス・SmartScreen について
+
+この exe にはコード署名がありません。また、起動時に中身を一時フォルダへ展開する形式のため、
+アンチウイルスソフトに誤検知（ブロック・隔離・警告）される可能性が高いです。
+
+- **SmartScreen**（「Windows によって PC が保護されました」）が表示された場合は、「詳細情報」→「実行」で起動できます。
+- アンチウイルスの反応が邪魔な場合は、`UmaKiremonoCounter.exe`（または展開したフォルダ）を**除外リストに追加**してください。
+  - Windows セキュリティ（Microsoft Defender）の場合:
+    「ウイルスと脅威の防止」→「ウイルスと脅威の防止の設定」の「設定の管理」→「除外」の「除外の追加または削除」→「除外の追加」→「ファイル」または「フォルダー」
+  - その他のアンチウイルスソフトは、それぞれの除外（例外）設定から追加してください。
+
+除外に追加するのは、このリポジトリの [Releases](https://github.com/sojuenke-cmyk/umamusume-kiremono-counter/releases) から入手したファイルだけにしてください。
+
 ## リリース手順
 
 `v` で始まるタグを push すると、GitHub Actions がリリースビルドを作成して Release に添付します。
