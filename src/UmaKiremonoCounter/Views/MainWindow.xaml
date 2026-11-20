@@ -1,0 +1,153 @@
+﻿<Window x:Class="UmaKiremonoCounter.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:UmaKiremonoCounter.ViewModels"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
+        Title="ウマ娘 切れ者カウンター"
+        Left="{Binding WindowLeft, Mode=TwoWay}"
+        Top="{Binding WindowTop, Mode=TwoWay}"
+        Width="380"
+        SizeToContent="Height"
+        ResizeMode="CanMinimize"
+        Topmost="{Binding Topmost}"
+        FontFamily="Yu Gothic UI"
+        FontSize="13"
+        Background="#F4F5F8">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="#DADCE3" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Padding" Value="10,6" />
+            <Setter Property="Margin" Value="0,0,0,6" />
+        </Style>
+
+        <Style x:Key="SectionHeader" TargetType="TextBlock">
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="#4A4F5C" />
+            <Setter Property="Margin" Value="2,6,0,4" />
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Padding" Value="10,3" />
+            <Setter Property="Margin" Value="4,0,0,0" />
+            <Setter Property="MinWidth" Value="48" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+
+        <Style x:Key="SuccessButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#DDF2E3" />
+            <Setter Property="BorderBrush" Value="#5FB277" />
+        </Style>
+
+        <DataTemplate x:Key="CategoryTemplate" DataType="{x:Type vm:CategoryViewModel}">
+            <Border Style="{StaticResource Card}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
+                        <TextBlock Text="{Binding Summary}" Foreground="#333" Margin="0,2,0,0"
+                                   ToolTip="未取得連続: 前回の成功から連続で切れ者を引けていない回数（育成をまたいで累計）" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="成功" Style="{StaticResource SuccessButton}" Command="{Binding SuccessCommand}"
+                                Visibility="{Binding HasOutcome, Converter={StaticResource BoolToVis}}" />
+                        <Button Content="失敗" Command="{Binding FailureCommand}"
+                                Visibility="{Binding HasOutcome, Converter={StaticResource BoolToVis}}" />
+                        <Button Content="+1" Style="{StaticResource SuccessButton}" Command="{Binding AddCommand}"
+                                Visibility="{Binding IsCountOnly, Converter={StaticResource BoolToVis}}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </DataTemplate>
+    </Window.Resources>
+
+    <StackPanel Margin="10">
+        <!-- 育成 -->
+        <Border Style="{StaticResource Card}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock VerticalAlignment="Center" FontSize="14">
+                    <Run Text="育成" FontWeight="SemiBold" />
+                    <Run Text="  " />
+                    <Run Text="{Binding CurrentCareer, Mode=OneWay}" FontWeight="Bold" FontSize="18" />
+                    <Run Text="回目" />
+                </TextBlock>
+                <Button Grid.Column="1" Content="育成開始" Style="{StaticResource SuccessButton}"
+                        Command="{Binding StartCareerCommand}" />
+            </Grid>
+        </Border>
+
+        <!-- 今回の育成 -->
+        <TextBlock Style="{StaticResource SectionHeader}" Text="今回の育成" />
+        <ContentControl Content="{Binding Signature}" ContentTemplate="{StaticResource CategoryTemplate}" />
+        <ContentControl Content="{Binding Common}" ContentTemplate="{StaticResource CategoryTemplate}" />
+        <ContentControl Content="{Binding Romance}" ContentTemplate="{StaticResource CategoryTemplate}" />
+        <ContentControl Content="{Binding Awakening}" ContentTemplate="{StaticResource CategoryTemplate}" />
+
+        <!-- 統計 -->
+        <TextBlock Style="{StaticResource SectionHeader}" Text="統計（累計）" />
+        <Border Style="{StaticResource Card}">
+            <StackPanel>
+                <Grid TextElement.Foreground="#6B7080" Margin="0,0,0,2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="50" />
+                        <ColumnDefinition Width="50" />
+                        <ColumnDefinition Width="64" />
+                        <ColumnDefinition Width="72" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="区分" />
+                    <TextBlock Grid.Column="1" Text="発生" TextAlignment="Right" />
+                    <TextBlock Grid.Column="2" Text="成功" TextAlignment="Right" />
+                    <TextBlock Grid.Column="3" Text="成功率" TextAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="未取得連続" TextAlignment="Right" />
+                </Grid>
+                <ItemsControl ItemsSource="{Binding Stats}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:StatsRow}">
+                            <Grid Margin="0,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="50" />
+                                    <ColumnDefinition Width="50" />
+                                    <ColumnDefinition Width="64" />
+                                    <ColumnDefinition Width="72" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="{Binding Title}" />
+                                <TextBlock Grid.Column="1" Text="{Binding Occurrences}" TextAlignment="Right" />
+                                <TextBlock Grid.Column="2" Text="{Binding Successes}" TextAlignment="Right" />
+                                <TextBlock Grid.Column="3" Text="{Binding RateText}" TextAlignment="Right" />
+                                <TextBlock Grid.Column="4" Text="{Binding MissStreak}" TextAlignment="Right" FontWeight="SemiBold" />
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Border>
+
+        <!-- 取得ログ -->
+        <TextBlock Style="{StaticResource SectionHeader}" Text="切れ者取得ログ" />
+        <ListBox ItemsSource="{Binding Log}" DisplayMemberPath="Text" Height="110" />
+
+        <!-- 操作 -->
+        <DockPanel Margin="0,8,0,0" LastChildFill="True">
+            <Button DockPanel.Dock="Right" Content="全削除" Command="{Binding ResetCommand}" />
+            <Button DockPanel.Dock="Right" Content="取り消し" Command="{Binding UndoCommand}"
+                    ToolTip="{Binding UndoDescription}" ToolTipService.ShowOnDisabled="True" />
+            <CheckBox Content="最前面に表示" IsChecked="{Binding Topmost}" VerticalAlignment="Center" />
+        </DockPanel>
+    </StackPanel>
+</Window>
