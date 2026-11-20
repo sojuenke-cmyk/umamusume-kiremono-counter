@@ -41,6 +41,7 @@ public sealed class MainViewModel : ObservableObject
         StartCareerCommand = new RelayCommand(StartCareer);
         UndoCommand = new RelayCommand(Undo, () => _data.Records.Count > 0);
         ResetCommand = new RelayCommand(Reset, () => _data.Records.Count > 0);
+        ToggleCompactCommand = new RelayCommand(() => IsCompact = !IsCompact);
 
         Refresh();
     }
@@ -66,6 +67,26 @@ public sealed class MainViewModel : ObservableObject
     public RelayCommand UndoCommand { get; }
 
     public RelayCommand ResetCommand { get; }
+
+    /// <summary>通常表示と省スペースモードの切り替え。</summary>
+    public RelayCommand ToggleCompactCommand { get; }
+
+    /// <summary>省スペースモード（プレイ中向けに記録ボタンとタイマーだけを表示）。</summary>
+    public bool IsCompact
+    {
+        get => _data.Window.IsCompact;
+        set
+        {
+            if (_data.Window.IsCompact == value)
+            {
+                return;
+            }
+
+            _data.Window.IsCompact = value;
+            OnPropertyChanged();
+            Save();
+        }
+    }
 
     /// <summary>ウィンドウの左端位置（NaN なら OS 既定の位置）。</summary>
     public double WindowLeft

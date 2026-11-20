@@ -19,4 +19,7 @@ public sealed class WindowSettings
     public double? Top { get; set; }
 
     public bool Topmost { get; set; } = true;
+
+    /// <summary>省スペースモードか。</summary>
+    public bool IsCompact { get; set; }
 }

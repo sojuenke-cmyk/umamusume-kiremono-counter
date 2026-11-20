@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:UmaKiremonoCounter.ViewModels"
+        xmlns:views="clr-namespace:UmaKiremonoCounter.Views"
         mc:Ignorable="d"
         d:DataContext="{d:DesignInstance Type=vm:MainViewModel}"
         Title="ウマ娘 切れ者カウンター"
@@ -18,6 +19,7 @@
         Background="#F4F5F8">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <views:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVis" />
 
         <Style x:Key="Card" TargetType="Border">
             <Setter Property="Background" Value="White" />
@@ -46,6 +48,63 @@
             <Setter Property="BorderBrush" Value="#5FB277" />
         </Style>
 
+        <!-- 省スペースモード用の小さいボタン -->
+        <Style x:Key="CompactButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Padding" Value="6,0" />
+            <Setter Property="Margin" Value="3,0,0,0" />
+            <Setter Property="MinWidth" Value="40" />
+            <Setter Property="Height" Value="22" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <Style x:Key="CompactSuccessButton" TargetType="Button" BasedOn="{StaticResource CompactButton}">
+            <Setter Property="Background" Value="#DDF2E3" />
+            <Setter Property="BorderBrush" Value="#5FB277" />
+        </Style>
+
+        <!-- タイマー: 終了時に赤くする -->
+        <Style x:Key="TimerCard" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Finished}">
+                    <Setter Property="Background" Value="#FFE3E3" />
+                    <Setter Property="BorderBrush" Value="#E05A5A" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="CompactTimerRow" TargetType="Border" BasedOn="{StaticResource TimerCard}">
+            <Setter Property="Padding" Value="6,1" />
+            <Setter Property="Margin" Value="0,0,0,3" />
+            <Setter Property="CornerRadius" Value="4" />
+        </Style>
+
+        <Style x:Key="TimerText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Consolas, Yu Gothic UI" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="#9AA0AC" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Running}">
+                    <Setter Property="Foreground" Value="#222" />
+                </DataTrigger>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Finished}">
+                    <Setter Property="Foreground" Value="#D03030" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="TimerFinishedText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#D03030" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Finished}">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <DataTemplate x:Key="CategoryTemplate" DataType="{x:Type vm:CategoryViewModel}">
             <Border Style="{StaticResource Card}">
                 <Grid>
@@ -65,155 +124,182 @@
                 </Grid>
             </Border>
         </DataTemplate>
+
+        <DataTemplate x:Key="CompactCategoryTemplate" DataType="{x:Type vm:CategoryViewModel}">
+            <Grid Margin="0,1">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Title}" VerticalAlignment="Center" Margin="2,0,0,0" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="成功" Style="{StaticResource CompactSuccessButton}" Command="{Binding SuccessCommand}"
+                            Visibility="{Binding HasOutcome, Converter={StaticResource BoolToVis}}" />
+                    <Button Content="失敗" Style="{StaticResource CompactButton}" Command="{Binding FailureCommand}"
+                            Visibility="{Binding HasOutcome, Converter={StaticResource BoolToVis}}" />
+                    <Button Content="+1" Style="{StaticResource CompactSuccessButton}" Command="{Binding AddCommand}"
+                            Visibility="{Binding IsCountOnly, Converter={StaticResource BoolToVis}}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
     </Window.Resources>
 
-    <StackPanel Margin="10">
-        <!-- 育成 -->
-        <Border Style="{StaticResource Card}">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <TextBlock VerticalAlignment="Center" FontSize="14">
-                    <Run Text="育成" FontWeight="SemiBold" />
-                    <Run Text="  " />
-                    <Run Text="{Binding CurrentCareer, Mode=OneWay}" FontWeight="Bold" FontSize="18" />
-                    <Run Text="回目" />
-                </TextBlock>
-                <Button Grid.Column="1" Content="育成開始" Style="{StaticResource SuccessButton}"
-                        Command="{Binding StartCareerCommand}" />
-            </Grid>
-        </Border>
-
-        <!-- トレーナーアビリティタイマー -->
-        <Border DataContext="{Binding TrainerAbilityTimer}">
-            <Border.Style>
-                <Style TargetType="Border" BasedOn="{StaticResource Card}">
-                    <Style.Triggers>
-                        <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Finished}">
-                            <Setter Property="Background" Value="#FFE3E3" />
-                            <Setter Property="BorderBrush" Value="#E05A5A" />
-                        </DataTrigger>
-                    </Style.Triggers>
-                </Style>
-            </Border.Style>
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock Text="トレーナーアビリティ" FontWeight="SemiBold" />
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="{Binding RemainingText}" FontSize="22" FontWeight="Bold"
-                                   FontFamily="Consolas, Yu Gothic UI">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Foreground" Value="#9AA0AC" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Running}">
-                                            <Setter Property="Foreground" Value="#222" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Finished}">
-                                            <Setter Property="Foreground" Value="#D03030" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <TextBlock Text="時間です！" Foreground="#D03030" FontWeight="Bold" FontSize="14"
-                                   VerticalAlignment="Center" Margin="10,0,0,0">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Finished}">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal">
-                    <Button Content="{Binding StartLabel}" Style="{StaticResource SuccessButton}" Command="{Binding StartCommand}" />
-                    <Button Content="リセット" Command="{Binding ResetCommand}" />
-                </StackPanel>
-            </Grid>
-        </Border>
-
-        <!-- 記録 -->
-        <TextBlock Style="{StaticResource SectionHeader}" Text="記録" />
-        <ContentControl Content="{Binding Signature}" ContentTemplate="{StaticResource CategoryTemplate}" />
-        <ContentControl Content="{Binding Common}" ContentTemplate="{StaticResource CategoryTemplate}" />
-        <ContentControl Content="{Binding Race}" ContentTemplate="{StaticResource CategoryTemplate}" />
-        <ContentControl Content="{Binding Romance}" ContentTemplate="{StaticResource CategoryTemplate}" />
-        <ContentControl Content="{Binding Awakening}" ContentTemplate="{StaticResource CategoryTemplate}" />
-
-        <!-- 統計 -->
-        <TextBlock Style="{StaticResource SectionHeader}" Text="統計（累計）" />
-        <Border Style="{StaticResource Card}">
-            <StackPanel>
-                <Grid TextElement.Foreground="#6B7080" Margin="0,0,0,2">
+    <Grid>
+        <!-- ===== 通常表示 ===== -->
+        <StackPanel Margin="10" Visibility="{Binding IsCompact, Converter={StaticResource InverseBoolToVis}}">
+            <!-- 育成 -->
+            <Border Style="{StaticResource Card}">
+                <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="50" />
-                        <ColumnDefinition Width="50" />
-                        <ColumnDefinition Width="64" />
-                        <ColumnDefinition Width="72" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBlock Text="区分" />
-                    <TextBlock Grid.Column="1" Text="発生" TextAlignment="Right" />
-                    <TextBlock Grid.Column="2" Text="成功" TextAlignment="Right" />
-                    <TextBlock Grid.Column="3" Text="成功率" TextAlignment="Right" />
-                    <TextBlock Grid.Column="4" Text="未取得連続" TextAlignment="Right"
-                               ToolTip="前回の成功から連続で切れ者を引けていない回数（育成をまたいで累計）" />
+                    <TextBlock VerticalAlignment="Center" FontSize="14">
+                        <Run Text="育成" FontWeight="SemiBold" />
+                        <Run Text="  " />
+                        <Run Text="{Binding CurrentCareer, Mode=OneWay}" FontWeight="Bold" FontSize="18" />
+                        <Run Text="回目" />
+                    </TextBlock>
+                    <Button Grid.Column="1" Content="育成開始" Style="{StaticResource SuccessButton}"
+                            Command="{Binding StartCareerCommand}" />
                 </Grid>
-                <ItemsControl ItemsSource="{Binding Stats}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate DataType="{x:Type vm:StatsRow}">
-                            <Grid Margin="0,1">
-                                <Grid.Style>
-                                    <Style TargetType="Grid">
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsTotal}" Value="True">
-                                                <Setter Property="TextElement.FontWeight" Value="Bold" />
-                                                <Setter Property="Margin" Value="0,1,0,6" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Grid.Style>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="50" />
-                                    <ColumnDefinition Width="50" />
-                                    <ColumnDefinition Width="64" />
-                                    <ColumnDefinition Width="72" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock Text="{Binding Title}" />
-                                <TextBlock Grid.Column="1" Text="{Binding Occurrences}" TextAlignment="Right" />
-                                <TextBlock Grid.Column="2" Text="{Binding Successes}" TextAlignment="Right" />
-                                <TextBlock Grid.Column="3" Text="{Binding RateText}" TextAlignment="Right" />
-                                <TextBlock Grid.Column="4" Text="{Binding MissStreak}" TextAlignment="Right" />
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
-        </Border>
+            </Border>
 
-        <!-- 取得ログ -->
-        <TextBlock Style="{StaticResource SectionHeader}" Text="切れ者取得ログ" />
-        <ListBox ItemsSource="{Binding Log}" DisplayMemberPath="Text" Height="110" />
+            <!-- トレーナーアビリティタイマー -->
+            <Border DataContext="{Binding TrainerAbilityTimer}" Style="{StaticResource TimerCard}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="トレーナーアビリティ" FontWeight="SemiBold" />
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="{Binding RemainingText}" Style="{StaticResource TimerText}" FontSize="22" />
+                            <TextBlock Text="時間です！" Style="{StaticResource TimerFinishedText}" FontSize="14" Margin="10,0,0,0" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal">
+                        <Button Content="{Binding StartLabel}" Style="{StaticResource SuccessButton}" Command="{Binding StartCommand}" />
+                        <Button Content="リセット" Command="{Binding ResetCommand}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
 
-        <!-- 操作 -->
-        <DockPanel Margin="0,8,0,0" LastChildFill="True">
-            <Button DockPanel.Dock="Right" Content="全削除" Command="{Binding ResetCommand}" />
-            <Button DockPanel.Dock="Right" Content="取り消し" Command="{Binding UndoCommand}"
-                    ToolTip="{Binding UndoDescription}" ToolTipService.ShowOnDisabled="True" />
-            <CheckBox Content="最前面に表示" IsChecked="{Binding Topmost}" VerticalAlignment="Center" />
-        </DockPanel>
-    </StackPanel>
+            <!-- 記録 -->
+            <TextBlock Style="{StaticResource SectionHeader}" Text="記録" />
+            <ContentControl Content="{Binding Signature}" ContentTemplate="{StaticResource CategoryTemplate}" />
+            <ContentControl Content="{Binding Common}" ContentTemplate="{StaticResource CategoryTemplate}" />
+            <ContentControl Content="{Binding Race}" ContentTemplate="{StaticResource CategoryTemplate}" />
+            <ContentControl Content="{Binding Romance}" ContentTemplate="{StaticResource CategoryTemplate}" />
+            <ContentControl Content="{Binding Awakening}" ContentTemplate="{StaticResource CategoryTemplate}" />
+
+            <!-- 統計 -->
+            <TextBlock Style="{StaticResource SectionHeader}" Text="統計（累計）" />
+            <Border Style="{StaticResource Card}">
+                <StackPanel>
+                    <Grid TextElement.Foreground="#6B7080" Margin="0,0,0,2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="50" />
+                            <ColumnDefinition Width="50" />
+                            <ColumnDefinition Width="64" />
+                            <ColumnDefinition Width="72" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Text="区分" />
+                        <TextBlock Grid.Column="1" Text="発生" TextAlignment="Right" />
+                        <TextBlock Grid.Column="2" Text="成功" TextAlignment="Right" />
+                        <TextBlock Grid.Column="3" Text="成功率" TextAlignment="Right" />
+                        <TextBlock Grid.Column="4" Text="未取得連続" TextAlignment="Right"
+                                   ToolTip="前回の成功から連続で切れ者を引けていない回数（育成をまたいで累計）" />
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Stats}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:StatsRow}">
+                                <Grid Margin="0,1">
+                                    <Grid.Style>
+                                        <Style TargetType="Grid">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsTotal}" Value="True">
+                                                    <Setter Property="TextElement.FontWeight" Value="Bold" />
+                                                    <Setter Property="Margin" Value="0,1,0,6" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Grid.Style>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="50" />
+                                        <ColumnDefinition Width="50" />
+                                        <ColumnDefinition Width="64" />
+                                        <ColumnDefinition Width="72" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Title}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Occurrences}" TextAlignment="Right" />
+                                    <TextBlock Grid.Column="2" Text="{Binding Successes}" TextAlignment="Right" />
+                                    <TextBlock Grid.Column="3" Text="{Binding RateText}" TextAlignment="Right" />
+                                    <TextBlock Grid.Column="4" Text="{Binding MissStreak}" TextAlignment="Right" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- 取得ログ -->
+            <TextBlock Style="{StaticResource SectionHeader}" Text="切れ者取得ログ" />
+            <ListBox ItemsSource="{Binding Log}" DisplayMemberPath="Text" Height="110" />
+
+            <!-- 操作 -->
+            <DockPanel Margin="0,8,0,0" LastChildFill="True">
+                <Button DockPanel.Dock="Right" Content="全削除" Command="{Binding ResetCommand}" />
+                <Button DockPanel.Dock="Right" Content="取り消し" Command="{Binding UndoCommand}"
+                        ToolTip="{Binding UndoDescription}" ToolTipService.ShowOnDisabled="True" />
+                <Button DockPanel.Dock="Right" Content="省スペース" Command="{Binding ToggleCompactCommand}"
+                        ToolTip="記録ボタンとタイマーだけの小さい表示に切り替えます" />
+                <CheckBox Content="最前面に表示" IsChecked="{Binding Topmost}" VerticalAlignment="Center" />
+            </DockPanel>
+        </StackPanel>
+
+        <!-- ===== 省スペースモード ===== -->
+        <StackPanel Margin="6,4,6,5" TextElement.FontSize="12"
+                    Visibility="{Binding IsCompact, Converter={StaticResource BoolToVis}}">
+            <!-- 育成・取り消し・通常表示 -->
+            <DockPanel Margin="0,0,0,3" LastChildFill="False">
+                <TextBlock DockPanel.Dock="Left" VerticalAlignment="Center" Margin="2,0,0,0">
+                    <Run Text="育成" />
+                    <Run Text="{Binding CurrentCareer, Mode=OneWay}" FontWeight="Bold" FontSize="14" />
+                    <Run Text="回目" />
+                </TextBlock>
+                <Button DockPanel.Dock="Left" Content="育成開始" Style="{StaticResource CompactSuccessButton}"
+                        Command="{Binding StartCareerCommand}" Margin="6,0,0,0" />
+                <Button DockPanel.Dock="Right" Content="通常表示" Style="{StaticResource CompactButton}"
+                        Command="{Binding ToggleCompactCommand}" />
+                <Button DockPanel.Dock="Right" Content="取り消し" Style="{StaticResource CompactButton}"
+                        Command="{Binding UndoCommand}"
+                        ToolTip="{Binding UndoDescription}" ToolTipService.ShowOnDisabled="True" />
+            </DockPanel>
+
+            <!-- トレーナーアビリティタイマー -->
+            <Border DataContext="{Binding TrainerAbilityTimer}" Style="{StaticResource CompactTimerRow}">
+                <DockPanel LastChildFill="False">
+                    <TextBlock DockPanel.Dock="Left" Text="トレーナーアビリティ" VerticalAlignment="Center" />
+                    <TextBlock DockPanel.Dock="Left" Text="{Binding RemainingText}" Style="{StaticResource TimerText}"
+                               FontSize="15" Margin="8,0,0,0" />
+                    <TextBlock DockPanel.Dock="Left" Text="時間です！" Style="{StaticResource TimerFinishedText}" Margin="6,0,0,0" />
+                    <Button DockPanel.Dock="Right" Content="リセット" Style="{StaticResource CompactButton}"
+                            Command="{Binding ResetCommand}" />
+                    <Button DockPanel.Dock="Right" Content="{Binding StartLabel}" Style="{StaticResource CompactSuccessButton}"
+                            Command="{Binding StartCommand}" />
+                </DockPanel>
+            </Border>
+
+            <!-- 記録 -->
+            <ContentControl Content="{Binding Signature}" ContentTemplate="{StaticResource CompactCategoryTemplate}" />
+            <ContentControl Content="{Binding Common}" ContentTemplate="{StaticResource CompactCategoryTemplate}" />
+            <ContentControl Content="{Binding Race}" ContentTemplate="{StaticResource CompactCategoryTemplate}" />
+            <ContentControl Content="{Binding Romance}" ContentTemplate="{StaticResource CompactCategoryTemplate}" />
+            <ContentControl Content="{Binding Awakening}" ContentTemplate="{StaticResource CompactCategoryTemplate}" />
+        </StackPanel>
+    </Grid>
 </Window>
