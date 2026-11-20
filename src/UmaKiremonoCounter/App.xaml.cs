@@ -14,7 +14,11 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        _mainViewModel = new MainViewModel(new DataStore(), new DialogService(), new ScreenService());
+        var trainerAbilityTimer = new TrainerAbilityTimerViewModel(
+            new DispatcherTickTimer(TimeSpan.FromMilliseconds(200)),
+            new SoundService(),
+            TimeProvider.System);
+        _mainViewModel = new MainViewModel(new DataStore(), new DialogService(), new ScreenService(), trainerAbilityTimer);
         MainWindow = new MainWindow { DataContext = _mainViewModel };
         MainWindow.Show();
     }

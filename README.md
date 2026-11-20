@@ -23,6 +23,7 @@
 - **未取得連続**: 前回の成功から連続で失敗した回数（育成をまたいで数える）
 - **切れ者取得ログ**: 取得日時・育成番号・種類（何回目で取得したか）
 - **取り消し**: 直前の記録を1件取り消し
+- **トレーナーアビリティタイマー**: 「開始」で12分のカウントダウン。0になるとチャイムが鳴り、赤く表示される。動作中・終了後の「再開始」で12分から再スタート、「リセット」で停止
 - データの保存先: `%LOCALAPPDATA%\UmaKiremonoCounter\data.json`
 
 ## 開発環境
@@ -44,6 +45,7 @@ src/UmaKiremonoCounter/
 ```powershell
 dotnet build
 dotnet run --project src/UmaKiremonoCounter
+dotnet test
 ```
 
 ## ダウンロード

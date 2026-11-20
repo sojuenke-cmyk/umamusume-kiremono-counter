@@ -24,8 +24,9 @@ public sealed class MainViewModel : ObservableObject
     private double _windowLeft = double.NaN;
     private double _windowTop = double.NaN;
 
-    public MainViewModel(IDataStore store, IDialogService dialog, IScreenService screen)
+    public MainViewModel(IDataStore store, IDialogService dialog, IScreenService screen, TrainerAbilityTimerViewModel trainerAbilityTimer)
     {
+        TrainerAbilityTimer = trainerAbilityTimer;
         _store = store;
         _dialog = dialog;
         _data = store.Load();
@@ -43,6 +44,8 @@ public sealed class MainViewModel : ObservableObject
 
         Refresh();
     }
+
+    public TrainerAbilityTimerViewModel TrainerAbilityTimer { get; }
 
     public CategoryViewModel Signature { get; }
 

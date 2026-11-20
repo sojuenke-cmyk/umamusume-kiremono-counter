@@ -86,6 +86,64 @@
             </Grid>
         </Border>
 
+        <!-- トレーナーアビリティタイマー -->
+        <Border DataContext="{Binding TrainerAbilityTimer}">
+            <Border.Style>
+                <Style TargetType="Border" BasedOn="{StaticResource Card}">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Finished}">
+                            <Setter Property="Background" Value="#FFE3E3" />
+                            <Setter Property="BorderBrush" Value="#E05A5A" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="トレーナーアビリティ" FontWeight="SemiBold" />
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="{Binding RemainingText}" FontSize="22" FontWeight="Bold"
+                                   FontFamily="Consolas, Yu Gothic UI">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="#9AA0AC" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Running}">
+                                            <Setter Property="Foreground" Value="#222" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Finished}">
+                                            <Setter Property="Foreground" Value="#D03030" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Text="時間です！" Foreground="#D03030" FontWeight="Bold" FontSize="14"
+                                   VerticalAlignment="Center" Margin="10,0,0,0">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding State}" Value="{x:Static vm:TimerState.Finished}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Horizontal">
+                    <Button Content="{Binding StartLabel}" Style="{StaticResource SuccessButton}" Command="{Binding StartCommand}" />
+                    <Button Content="リセット" Command="{Binding ResetCommand}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
         <!-- 記録 -->
         <TextBlock Style="{StaticResource SectionHeader}" Text="記録" />
         <ContentControl Content="{Binding Signature}" ContentTemplate="{StaticResource CategoryTemplate}" />
