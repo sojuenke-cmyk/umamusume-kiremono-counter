@@ -45,3 +45,22 @@ src/UmaKiremonoCounter/
 dotnet build
 dotnet run --project src/UmaKiremonoCounter
 ```
+
+## ダウンロード
+
+[Releases](https://github.com/sojuenke-cmyk/umamusume-kiremono-counter/releases) から `UmaKiremonoCounter-vX.Y.Z-win-x64.zip` をダウンロードし、展開した `UmaKiremonoCounter.exe` を実行します（.NET のインストールは不要）。
+
+## リリース手順
+
+`v` で始まるタグを push すると、GitHub Actions がリリースビルドを作成して Release に添付します。
+
+```powershell
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+ローカルで同じ配布用ビルドを作る場合:
+
+```powershell
+dotnet publish src/UmaKiremonoCounter -p:PublishProfile=win-x64
+```

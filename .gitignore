@@ -485,3 +485,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# 配布用 publish プロファイルは共有する
+!src/UmaKiremonoCounter/Properties/PublishProfiles/win-x64.pubxml
