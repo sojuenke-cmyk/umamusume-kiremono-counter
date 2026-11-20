@@ -17,6 +17,9 @@ public enum EventKind
 
     /// <summary>覚醒Lv7の切れ者イベント。</summary>
     AwakeningLv7,
+
+    /// <summary>レース後の切れ者イベント。</summary>
+    RaceEvent,
 }
 
 /// <summary>1件の記録。すべてのカウント・統計はこの記録の並びから算出する。</summary>

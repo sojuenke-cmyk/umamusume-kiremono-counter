@@ -53,11 +53,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Title}" FontWeight="SemiBold" />
-                        <TextBlock Text="{Binding Summary}" Foreground="#333" Margin="0,2,0,0"
-                                   ToolTip="未取得連続: 前回の成功から連続で切れ者を引けていない回数（育成をまたいで累計）" />
-                    </StackPanel>
+                    <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
                     <StackPanel Grid.Column="1" Orientation="Horizontal">
                         <Button Content="成功" Style="{StaticResource SuccessButton}" Command="{Binding SuccessCommand}"
                                 Visibility="{Binding HasOutcome, Converter={StaticResource BoolToVis}}" />
@@ -90,10 +86,11 @@
             </Grid>
         </Border>
 
-        <!-- 今回の育成 -->
-        <TextBlock Style="{StaticResource SectionHeader}" Text="今回の育成" />
+        <!-- 記録 -->
+        <TextBlock Style="{StaticResource SectionHeader}" Text="記録" />
         <ContentControl Content="{Binding Signature}" ContentTemplate="{StaticResource CategoryTemplate}" />
         <ContentControl Content="{Binding Common}" ContentTemplate="{StaticResource CategoryTemplate}" />
+        <ContentControl Content="{Binding Race}" ContentTemplate="{StaticResource CategoryTemplate}" />
         <ContentControl Content="{Binding Romance}" ContentTemplate="{StaticResource CategoryTemplate}" />
         <ContentControl Content="{Binding Awakening}" ContentTemplate="{StaticResource CategoryTemplate}" />
 
@@ -113,12 +110,23 @@
                     <TextBlock Grid.Column="1" Text="発生" TextAlignment="Right" />
                     <TextBlock Grid.Column="2" Text="成功" TextAlignment="Right" />
                     <TextBlock Grid.Column="3" Text="成功率" TextAlignment="Right" />
-                    <TextBlock Grid.Column="4" Text="未取得連続" TextAlignment="Right" />
+                    <TextBlock Grid.Column="4" Text="未取得連続" TextAlignment="Right"
+                               ToolTip="前回の成功から連続で切れ者を引けていない回数（育成をまたいで累計）" />
                 </Grid>
                 <ItemsControl ItemsSource="{Binding Stats}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate DataType="{x:Type vm:StatsRow}">
                             <Grid Margin="0,1">
+                                <Grid.Style>
+                                    <Style TargetType="Grid">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTotal}" Value="True">
+                                                <Setter Property="TextElement.FontWeight" Value="Bold" />
+                                                <Setter Property="Margin" Value="0,1,0,6" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Grid.Style>
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="50" />
@@ -130,7 +138,7 @@
                                 <TextBlock Grid.Column="1" Text="{Binding Occurrences}" TextAlignment="Right" />
                                 <TextBlock Grid.Column="2" Text="{Binding Successes}" TextAlignment="Right" />
                                 <TextBlock Grid.Column="3" Text="{Binding RateText}" TextAlignment="Right" />
-                                <TextBlock Grid.Column="4" Text="{Binding MissStreak}" TextAlignment="Right" FontWeight="SemiBold" />
+                                <TextBlock Grid.Column="4" Text="{Binding MissStreak}" TextAlignment="Right" />
                             </Grid>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

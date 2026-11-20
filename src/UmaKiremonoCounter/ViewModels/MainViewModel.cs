@@ -4,13 +4,17 @@ using UmaKiremonoCounter.Services;
 
 namespace UmaKiremonoCounter.ViewModels;
 
-public sealed record StatsRow(string Title, int Occurrences, int Successes, string RateText, int MissStreak);
+/// <summary>統計表の1行。該当しない項目は "-"。</summary>
+public sealed record StatsRow(string Title, string Occurrences, string Successes, string RateText, string MissStreak, bool IsTotal = false);
 
 public sealed record LogEntry(string Text);
 
 public sealed class MainViewModel : ObservableObject
 {
     private const int MaxLogEntries = 200;
+
+    /// <summary>未取得連続・合計の対象になる切れ者イベント。</summary>
+    private static readonly EventKind[] StreakKinds = [EventKind.SignatureEvent, EventKind.CommonEvent, EventKind.RaceEvent];
 
     private readonly IDataStore _store;
     private readonly IDialogService _dialog;
@@ -27,10 +31,11 @@ public sealed class MainViewModel : ObservableObject
         _data = store.Load();
         RestoreWindowPosition(screen.VirtualScreen);
 
-        Signature = new CategoryViewModel("勝負服 / 固有 切れ者イベント", true, true, s => Record(EventKind.SignatureEvent, s), CanRecord);
-        Common = new CategoryViewModel("共通 切れ者イベント", true, true, s => Record(EventKind.CommonEvent, s), CanRecord);
-        Romance = new CategoryViewModel("恋愛相談", true, false, s => Record(EventKind.RomanceConsultation, s), CanRecord);
-        Awakening = new CategoryViewModel("覚醒Lv7 切れ者イベント", false, false, s => Record(EventKind.AwakeningLv7, s), CanRecord);
+        Signature = new CategoryViewModel("勝負服 / 固有 切れ者イベント", true, s => Record(EventKind.SignatureEvent, s), CanRecord);
+        Common = new CategoryViewModel("共通 切れ者イベント", true, s => Record(EventKind.CommonEvent, s), CanRecord);
+        Race = new CategoryViewModel("レース後 切れ者イベント", true, s => Record(EventKind.RaceEvent, s), CanRecord);
+        Romance = new CategoryViewModel("恋愛相談", true, s => Record(EventKind.RomanceConsultation, s), CanRecord);
+        Awakening = new CategoryViewModel("覚醒Lv7 切れ者イベント", false, s => Record(EventKind.AwakeningLv7, s), CanRecord);
 
         StartCareerCommand = new RelayCommand(StartCareer);
         UndoCommand = new RelayCommand(Undo, () => _data.Records.Count > 0);
@@ -42,6 +47,8 @@ public sealed class MainViewModel : ObservableObject
     public CategoryViewModel Signature { get; }
 
     public CategoryViewModel Common { get; }
+
+    public CategoryViewModel Race { get; }
 
     public CategoryViewModel Romance { get; }
 
@@ -154,21 +161,18 @@ public sealed class MainViewModel : ObservableObject
     {
         var records = _data.Records;
         CurrentCareer = records.Count(r => r.Kind == EventKind.CareerStart);
-        var current = records.Where(r => r.CareerNumber == CurrentCareer).ToList();
-
-        Signature.Update(
-            Statistics.Compute(current, EventKind.SignatureEvent),
-            Statistics.Compute(records, EventKind.SignatureEvent).MissStreak);
-        Common.Update(
-            Statistics.Compute(current, EventKind.CommonEvent),
-            Statistics.Compute(records, EventKind.CommonEvent).MissStreak);
-        Romance.Update(Statistics.Compute(current, EventKind.RomanceConsultation), 0);
-        Awakening.Update(Statistics.Compute(current, EventKind.AwakeningLv7), 0);
 
         Stats.Clear();
         Stats.Add(ToRow("勝負服/固有", Statistics.Compute(records, EventKind.SignatureEvent)));
         Stats.Add(ToRow("共通", Statistics.Compute(records, EventKind.CommonEvent)));
-        Stats.Add(ToRow("合計", Statistics.Compute(records, EventKind.SignatureEvent, EventKind.CommonEvent)));
+        Stats.Add(ToRow("レース後", Statistics.Compute(records, EventKind.RaceEvent)));
+        Stats.Add(ToRow("合計", Statistics.Compute(records, StreakKinds), isTotal: true));
+
+        var romance = Statistics.Compute(records, EventKind.RomanceConsultation);
+        Stats.Add(ToRow("恋愛相談", romance) with { MissStreak = "-" });
+
+        var awakening = Statistics.Compute(records, EventKind.AwakeningLv7);
+        Stats.Add(new StatsRow("覚醒Lv7", $"{awakening.Occurrences}", "-", "-", "-"));
 
         Log.Clear();
         foreach (var entry in BuildLog(records).Take(MaxLogEntries))
@@ -179,6 +183,7 @@ public sealed class MainViewModel : ObservableObject
         UndoDescription = records.Count == 0 ? "取り消す記録はありません" : $"取り消し対象: {Describe(records[^1])}";
         Signature.RaiseCanExecuteChanged();
         Common.RaiseCanExecuteChanged();
+        Race.RaiseCanExecuteChanged();
         Romance.RaiseCanExecuteChanged();
         Awakening.RaiseCanExecuteChanged();
         UndoCommand.RaiseCanExecuteChanged();
@@ -205,8 +210,13 @@ public sealed class MainViewModel : ObservableObject
         }
     }
 
-    private static StatsRow ToRow(string title, CategoryStats stats)
-        => new(title, stats.Occurrences, stats.Successes, stats.SuccessRate is { } rate ? $"{rate:P1}" : "-", stats.MissStreak);
+    private static StatsRow ToRow(string title, CategoryStats stats, bool isTotal = false) => new(
+        title,
+        $"{stats.Occurrences}",
+        $"{stats.Successes}",
+        stats.SuccessRate is { } rate ? $"{rate:P1}" : "-",
+        $"{stats.MissStreak}",
+        isTotal);
 
     /// <summary>切れ者を取得した記録を新しい順に返す。</summary>
     private static IEnumerable<LogEntry> BuildLog(List<CounterRecord> records)
@@ -227,7 +237,7 @@ public sealed class MainViewModel : ObservableObject
             }
 
             var text = $"{record.Timestamp:MM/dd HH:mm}　#{record.CareerNumber}　{KindLabel(record.Kind)}";
-            if (record.Kind is EventKind.SignatureEvent or EventKind.CommonEvent)
+            if (StreakKinds.Contains(record.Kind))
             {
                 text += $"（{attempts[record.Kind]}回目で取得）";
             }
@@ -254,6 +264,7 @@ public sealed class MainViewModel : ObservableObject
         EventKind.CommonEvent => "共通",
         EventKind.RomanceConsultation => "恋愛相談",
         EventKind.AwakeningLv7 => "覚醒Lv7",
+        EventKind.RaceEvent => "レース後",
         _ => kind.ToString(),
     };
 }
